@@ -1,4 +1,4 @@
-# ☕ Kite AI Coffee Agent
+# ☕ Kite AI Payment Agent
 
 <div align="center">
 
@@ -20,7 +20,7 @@
 
 > 想象一下：一个 AI Agent 不仅能"思考"是否应该完成一笔支付，还能清晰地解释**为什么**做出这个决定，最终**自主执行**链上转账。
 >
-> 这就是 **Kite AI Coffee Agent** —— 一个展示"AI + 区块链"深度融合的 Demo 项目。
+> 这就是 **Kite AI Payment Agent** —— 一个展示"AI + 区块链"深度融合的 Demo 项目。
 
 ```
 用户: "我要买一杯 Espresso"

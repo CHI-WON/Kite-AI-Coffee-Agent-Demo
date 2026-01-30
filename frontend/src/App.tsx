@@ -55,7 +55,7 @@ function App() {
       
       <div className="container" style={{ opacity: mounted ? 1 : 0 }}>
         <div className="header">
-          <h1>☕ Kite AI Coffee</h1>
+          <h1>☕ Kite AI Payment Agent</h1>
           <p>Multi-Agent Payment System on Kite Testnet</p>
         </div>
 
