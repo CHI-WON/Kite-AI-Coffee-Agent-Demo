@@ -45,11 +45,13 @@ export const apiConfig = {
 
 /**
  * Coffee menu items with prices
+ * Note: Actual menu is fetched from backend API
  */
 export const coffeeMenu = [
-  { item: 'Latte', price: 0.03, description: 'Espresso with steamed milk' },
   { item: 'Espresso', price: 0.02, description: 'Strong concentrated coffee' },
+  { item: 'Latte', price: 0.03, description: 'Espresso with steamed milk' },
   { item: 'Cappuccino', price: 0.04, description: 'Espresso with foamed milk' },
   { item: 'Americano', price: 0.025, description: 'Espresso with hot water' },
-  { item: 'Premium Gold Coffee', price: 1.5, description: 'Special blend (will exceed limit!)' },
+  { item: 'Special Blend', price: 0.6, description: 'Requires approval (>0.5 USDT)' },
+  { item: 'Premium Gold Coffee', price: 1.5, description: 'Will be rejected (>1 USDT limit)' },
 ];

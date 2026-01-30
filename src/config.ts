@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { MultiAgentConfig, AgentRole } from './agents/types';
 
 // Load environment variables
 dotenv.config();
@@ -26,7 +27,7 @@ export const config = {
     vaultImplementation: '0xB5AAFCC6DD4DFc2B80fb8BCcf406E1a2Fd559e23',
   },
 
-  // Agent signer configuration
+  // Agent signer configuration (legacy - for single agent mode)
   signer: {
     privateKey: process.env.PRIVATE_KEY || '',
   },
@@ -38,7 +39,45 @@ export const config = {
     // Token decimals for USDT
     tokenDecimals: 18,
   },
+
+  // Multi-Agent configuration
+  multiAgent: {
+    // Use separate keys if provided, otherwise fallback to single PRIVATE_KEY
+    receptionKey: process.env.RECEPTION_AGENT_KEY || process.env.PRIVATE_KEY || '',
+    approvalKey: process.env.APPROVAL_AGENT_KEY || process.env.PRIVATE_KEY || '',
+    paymentKey: process.env.PAYMENT_AGENT_KEY || process.env.PRIVATE_KEY || '',
+    // Policy settings
+    approvalThreshold: parseFloat(process.env.APPROVAL_THRESHOLD || '0.5'),
+    maxSinglePayment: parseFloat(process.env.MAX_SINGLE_PAYMENT || '1.0'),
+    maxDailySpending: parseFloat(process.env.MAX_DAILY_SPENDING || '10.0'),
+  },
 };
+
+/**
+ * Get Multi-Agent configuration
+ */
+export function getMultiAgentConfig(): MultiAgentConfig {
+  return {
+    reception: {
+      role: AgentRole.RECEPTION,
+      name: 'ReceptionAgent',
+      privateKey: config.multiAgent.receptionKey,
+    },
+    approval: {
+      role: AgentRole.APPROVAL,
+      name: 'ApprovalAgent',
+      privateKey: config.multiAgent.approvalKey,
+    },
+    payment: {
+      role: AgentRole.PAYMENT,
+      name: 'PaymentAgent',
+      privateKey: config.multiAgent.paymentKey,
+    },
+    approvalThreshold: config.multiAgent.approvalThreshold,
+    maxSinglePayment: config.multiAgent.maxSinglePayment,
+    maxDailySpending: config.multiAgent.maxDailySpending,
+  };
+}
 
 /**
  * Validate that all required configuration is present
@@ -53,6 +92,30 @@ export function validateConfig(): void {
   }
 
   console.log('✅ Configuration validated successfully');
+}
+
+/**
+ * Validate Multi-Agent configuration
+ */
+export function validateMultiAgentConfig(): void {
+  const { receptionKey, approvalKey, paymentKey } = config.multiAgent;
+
+  if (!receptionKey || !approvalKey || !paymentKey) {
+    throw new Error('All agent private keys are required. Set PRIVATE_KEY or individual agent keys.');
+  }
+
+  // Check for placeholder values
+  const placeholders = ['your_testnet_private_key_here', ''];
+  if (placeholders.includes(receptionKey) || 
+      placeholders.includes(approvalKey) || 
+      placeholders.includes(paymentKey)) {
+    throw new Error('Please replace placeholder private keys with actual testnet private keys');
+  }
+
+  console.log('✅ Multi-Agent configuration validated');
+  console.log(`   Reception Key: ${receptionKey.slice(0, 6)}...${receptionKey.slice(-4)}`);
+  console.log(`   Approval Key:  ${approvalKey.slice(0, 6)}...${approvalKey.slice(-4)}`);
+  console.log(`   Payment Key:   ${paymentKey.slice(0, 6)}...${paymentKey.slice(-4)}`);
 }
 
 /**
