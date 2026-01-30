@@ -36,7 +36,7 @@ export const config = {
   payment: {
     // Default merchant address (can be overridden in orders)
     defaultMerchantAddress: process.env.MERCHANT_ADDRESS || '',
-    // Token decimals for USDT
+    // Token decimals for USDT (Kite Testnet Test USD uses 18 decimals)
     tokenDecimals: 18,
   },
 

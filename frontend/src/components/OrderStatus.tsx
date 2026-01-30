@@ -1,7 +1,26 @@
 import AgentPipeline, { PipelineData } from './AgentPipeline';
+import AIDecisionPanel from './AIDecisionPanel';
 
 /**
- * Order status data structure - updated for multi-agent
+ * AI Decision result structure
+ */
+interface AIDecisionResult {
+  decision: string;
+  confidence: number;
+  riskLevel: string;
+  reasoning: Array<{
+    check: string;
+    result: 'pass' | 'fail' | 'warn';
+    detail: string;
+    weight: number;
+  }>;
+  summary: string;
+  suggestions?: string[];
+  processingTime: number;
+}
+
+/**
+ * Order status data structure - enhanced with AI decision
  */
 export interface OrderStatusData {
   status: string;
@@ -11,6 +30,8 @@ export interface OrderStatusData {
     price: number;
     currency: string;
   };
+  intent?: string;
+  aiDecision?: AIDecisionResult;
   pipeline?: PipelineData;
   transactionHash?: string;
   explorerUrl?: string;
@@ -23,13 +44,12 @@ interface OrderStatusProps {
   onNewOrder: () => void;
 }
 
-const coffeeEmojis: Record<string, string> = {
-  'Espresso': '☕',
-  'Latte': '🥛',
-  'Cappuccino': '☕',
-  'Americano': '🫖',
-  'Special Blend': '✨',
-  'Premium Gold Coffee': '👑',
+const intentLabels: Record<string, string> = {
+  'buy_coffee': '☕ Buy Coffee',
+  'urgent_order': '⚡ Urgent Order',
+  'bulk_order': '📦 Bulk Order',
+  'repeat_order': '🔄 Repeat Order',
+  'custom_tip': '💰 Custom Tip',
 };
 
 function OrderStatus({ status, onNewOrder }: OrderStatusProps) {
@@ -37,21 +57,15 @@ function OrderStatus({ status, onNewOrder }: OrderStatusProps) {
   const isFailed = status.status === 'rejected' || status.status === 'failed';
   const isPending = !isSuccess && !isFailed;
 
-  const getStatusIcon = () => {
-    if (isSuccess) return '🎉';
-    if (isFailed) return '😔';
-    return '⏳';
-  };
-
   const getStatusText = () => {
     switch (status.status) {
-      case 'received': return 'Order Received';
+      case 'received': return 'AI Evaluating...';
       case 'validating': return 'Validating...';
       case 'pending_approval': return 'Pending Approval';
       case 'approved': return 'Approved';
       case 'processing': return 'Processing Payment';
       case 'completed': return 'Completed!';
-      case 'rejected': return 'Rejected';
+      case 'rejected': return 'Rejected by AI';
       case 'failed': return 'Failed';
       default: return status.status;
     }
@@ -80,58 +94,66 @@ function OrderStatus({ status, onNewOrder }: OrderStatusProps) {
           borderRadius: '10px',
           marginRight: '4px'
         }}>
-          📋
+          🧠
         </span>
-        Order Status
+        AI Decision Result
       </h2>
 
-      {/* Order ID */}
-      {status.orderId && (
+      {/* Order ID and Intent */}
+      {(status.orderId || status.intent) && (
         <div style={{ 
-          textAlign: 'center', 
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           fontSize: '0.75rem', 
           color: 'rgba(255,255,255,0.4)',
           marginBottom: '16px',
-          fontFamily: 'monospace',
           background: 'rgba(255,255,255,0.03)',
           padding: '8px 12px',
           borderRadius: '8px',
         }}>
-          Order ID: {status.orderId}
+          {status.orderId && (
+            <span style={{ fontFamily: 'monospace' }}>ID: {status.orderId}</span>
+          )}
+          {status.intent && (
+            <span style={{ color: '#a78bfa' }}>{intentLabels[status.intent] || status.intent}</span>
+          )}
         </div>
       )}
 
-      {/* Status icon and badge */}
-      <div style={{ 
-        textAlign: 'center', 
-        marginBottom: '24px',
-        padding: '24px',
-        background: isSuccess 
-          ? 'rgba(34, 197, 94, 0.1)' 
-          : isFailed 
-          ? 'rgba(239, 68, 68, 0.1)'
-          : 'rgba(139, 92, 246, 0.1)',
-        borderRadius: '16px',
-        border: `1px solid ${isSuccess 
-          ? 'rgba(34, 197, 94, 0.2)' 
-          : isFailed 
-          ? 'rgba(239, 68, 68, 0.2)'
-          : 'rgba(139, 92, 246, 0.2)'}`,
-      }}>
+      {/* AI Decision Panel - THE KEY FEATURE */}
+      {status.aiDecision && (
+        <AIDecisionPanel decision={status.aiDecision} />
+      )}
+
+      {/* Status Badge (for pending states) */}
+      {isPending && !status.aiDecision && (
         <div style={{ 
-          fontSize: '4rem', 
-          marginBottom: '12px',
-          animation: isPending ? 'pulse 2s infinite' : 'none',
+          textAlign: 'center', 
+          marginBottom: '24px',
+          padding: '24px',
+          background: 'rgba(139, 92, 246, 0.1)',
+          borderRadius: '16px',
+          border: '1px solid rgba(139, 92, 246, 0.2)',
         }}>
-          {getStatusIcon()}
+          <div style={{ 
+            fontSize: '4rem', 
+            marginBottom: '12px',
+            animation: 'pulse 2s infinite',
+          }}>
+            🧠
+          </div>
+          <span className={`status-badge ${getStatusClass()}`}>
+            {getStatusText()}
+          </span>
+          <div style={{ marginTop: '16px', color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>
+            AI is analyzing your order...
+          </div>
         </div>
-        <span className={`status-badge ${getStatusClass()}`}>
-          {getStatusText()}
-        </span>
-      </div>
+      )}
 
       {/* Multi-Agent Pipeline Visualization */}
-      {status.pipeline && (
+      {status.pipeline && Object.keys(status.pipeline).length > 0 && (
         <AgentPipeline 
           pipeline={status.pipeline} 
           currentStatus={status.status}
@@ -158,40 +180,19 @@ function OrderStatus({ status, onNewOrder }: OrderStatusProps) {
         
         <div className="info-row">
           <span className="info-label">Item</span>
-          <span className="info-value">
-            {coffeeEmojis[status.order.item] || '☕'} {status.order.item}
-          </span>
+          <span className="info-value">☕ {status.order.item}</span>
         </div>
 
         <div className="info-row">
-          <span className="info-label">Price</span>
+          <span className="info-label">Amount</span>
           <span className="info-value" style={{ color: '#a78bfa', fontWeight: 700 }}>
             {status.order.price} {status.order.currency}
           </span>
         </div>
       </div>
 
-      {/* Pending state */}
-      {isPending && (
-        <div className="loading" style={{ 
-          background: 'rgba(139, 92, 246, 0.1)',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '20px',
-        }}>
-          <div className="spinner" />
-          <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-            {status.status === 'validating' && '📥 Reception Agent validating order...'}
-            {status.status === 'pending_approval' && '🔍 Approval Agent reviewing order...'}
-            {status.status === 'approved' && '💳 Payment Agent preparing transfer...'}
-            {status.status === 'processing' && '🚀 Executing on-chain transfer...'}
-            {status.status === 'received' && '🤖 Starting multi-agent pipeline...'}
-          </span>
-        </div>
-      )}
-
-      {/* Success state */}
-      {isSuccess && (
+      {/* Success state with transaction */}
+      {isSuccess && status.transactionHash && (
         <div className="success-message">
           <div style={{ 
             display: 'flex', 
@@ -200,36 +201,34 @@ function OrderStatus({ status, onNewOrder }: OrderStatusProps) {
             marginBottom: '12px' 
           }}>
             <span style={{ fontSize: '1.5rem' }}>🎉</span>
-            <strong style={{ fontSize: '1rem' }}>Order Completed!</strong>
+            <strong style={{ fontSize: '1rem' }}>AI Approved & Transaction Complete!</strong>
           </div>
           <div style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: '12px' }}>
-            Your coffee order was processed successfully through all 3 agents.
+            The AI evaluated your order and approved it. The payment was processed through the agent pipeline.
           </div>
-          {status.transactionHash && (
-            <div style={{ 
-              background: 'rgba(0,0,0,0.2)',
-              padding: '12px',
-              borderRadius: '8px',
-            }}>
-              <div style={{ fontSize: '0.75rem', marginBottom: '6px', opacity: 0.7 }}>
-                Transaction Hash
-              </div>
-              <a 
-                href={status.explorerUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="tx-link"
-                style={{ fontSize: '0.85rem' }}
-              >
-                {status.transactionHash.slice(0, 20)}...{status.transactionHash.slice(-16)}
-              </a>
+          <div style={{ 
+            background: 'rgba(0,0,0,0.2)',
+            padding: '12px',
+            borderRadius: '8px',
+          }}>
+            <div style={{ fontSize: '0.75rem', marginBottom: '6px', opacity: 0.7 }}>
+              Transaction Hash
             </div>
-          )}
+            <a 
+              href={status.explorerUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="tx-link"
+              style={{ fontSize: '0.85rem' }}
+            >
+              {status.transactionHash.slice(0, 20)}...{status.transactionHash.slice(-16)}
+            </a>
+          </div>
         </div>
       )}
 
       {/* Failed state */}
-      {isFailed && (
+      {isFailed && !status.aiDecision && (
         <div className="error-message">
           <div style={{ 
             display: 'flex', 
@@ -239,7 +238,7 @@ function OrderStatus({ status, onNewOrder }: OrderStatusProps) {
           }}>
             <span style={{ fontSize: '1.2rem' }}>❌</span>
             <strong>
-              {status.status === 'rejected' ? 'Order Rejected by Agent' : 'Order Failed'}
+              {status.status === 'rejected' ? 'AI Rejected Order' : 'Order Failed'}
             </strong>
           </div>
           <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
@@ -248,12 +247,31 @@ function OrderStatus({ status, onNewOrder }: OrderStatusProps) {
         </div>
       )}
 
+      {/* Pending loader */}
+      {isPending && (
+        <div className="loading" style={{ 
+          background: 'rgba(139, 92, 246, 0.1)',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '20px',
+        }}>
+          <div className="spinner" />
+          <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+            {status.status === 'received' && '🧠 AI evaluating your intent...'}
+            {status.status === 'validating' && '📥 Reception Agent validating...'}
+            {status.status === 'pending_approval' && '🔍 Approval Agent reviewing...'}
+            {status.status === 'approved' && '💳 Payment Agent preparing...'}
+            {status.status === 'processing' && '🚀 Executing on-chain transfer...'}
+          </span>
+        </div>
+      )}
+
       <button
         className={isSuccess ? "btn-primary" : "btn-secondary"}
         onClick={onNewOrder}
         style={{ width: '100%' }}
       >
-        {isSuccess ? '☕ Order Another Coffee' : '← Place New Order'}
+        {isSuccess ? '🧠 Try Another Order' : '← New Order'}
       </button>
     </div>
   );
