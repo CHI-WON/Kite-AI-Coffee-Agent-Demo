@@ -1,0 +1,33 @@
+{
+  "name": "kite-ai-coffee-agent",
+  "version": "1.0.0",
+  "description": "AI Agent Demo for coffee shop payments using Kite Account Abstraction SDK",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "keywords": [
+    "kite",
+    "account-abstraction",
+    "web3",
+    "ai-agent",
+    "erc4337"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
+    "gokite-aa-sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
