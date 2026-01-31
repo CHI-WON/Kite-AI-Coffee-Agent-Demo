@@ -12,6 +12,12 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+### 🎥 Demo 演示视频
+
+[![Watch Demo](https://img.shields.io/badge/YouTube-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/k8vhekvICTI)
+
+👆 **点击观看完整 Demo 演示**
+
 </div>
 
 ---
